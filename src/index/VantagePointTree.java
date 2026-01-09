@@ -53,6 +53,7 @@ public class VantagePointTree {
         // 选取一个支撑点
         List<MetricData> pivots = selector.selectPivots(data, 1, distance);
         MetricData vp = pivots.get(0);
+        System.out.println("内部节点: " + vp);
         // 从数据集中移除支撑点
         List<MetricData> remainingData = new ArrayList<>(data);
         remainingData.remove(vp);

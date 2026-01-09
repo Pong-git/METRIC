@@ -53,7 +53,7 @@ public class GeneralHyperPlaneTree {
         List<MetricData> pivots = pivotSelector.selectPivots(data, 2, distance);
         MetricData pivot1 = pivots.get(0);
         MetricData pivot2 = pivots.get(1);
-        // System.out.println("内部节点: " + pivot1 + ", " + pivot2);
+        System.out.println("内部节点: " + pivot1 + ", " + pivot2);
 
         //移除支撑点
         List<MetricData> remainingData = new ArrayList<>(data);

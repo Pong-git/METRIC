@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * VectorReader 用于从文件中加载向量数据。
- * 数据文件第一行为元信息（维度，总数量），之后每行为向量。
+ * 数据文件第一行为信息（维度，总数量），之后为向量数据（可能跨越多行）。
  */
 public class VectorReader {
 
@@ -21,21 +21,27 @@ public class VectorReader {
      */
     public List<VectorData> load(String path, int dim, int count) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            // 读取并解析信息
             int[] meta = parseMetaData(br.readLine());
-            validateRequest(dim, count, meta[0], meta[1]);
-            List<Double> values = readValues(br);
-            return buildVectors(values, dim, count, meta[0]);
+            int totalDim = meta[0];
+            int totalCount = meta[1];
+            
+            // 校验请求参数
+            validateRequest(dim, count, totalDim, totalCount);
+            
+            // 直接读取所需数量的向量
+            return readVectors(br, dim, count, totalDim);
         }
     }
 
     // 解析第一行元信息
     private int[] parseMetaData(String line) {
         if (line == null || line.trim().isEmpty()) {
-            throw new IllegalArgumentException("文件缺少元信息（第一行）");
+            throw new IllegalArgumentException("文件缺少首行信息（维度 数量）");
         }
         String[] parts = line.trim().split("\\s+");
         if (parts.length < 2) {
-            throw new IllegalArgumentException("元信息格式错误，应包含维度和数量");
+            throw new IllegalArgumentException("信息格式错误，应包含维度和数量");
         }
         return new int[]{
             Integer.parseInt(parts[0]),
@@ -53,31 +59,51 @@ public class VectorReader {
         }
     }
 
-    // 读取所有浮点数值
-    private List<Double> readValues(BufferedReader br) throws IOException {
-        List<Double> values = new ArrayList<>();
+    // 改进后的向量读取方法：支持跨行向量数据
+    private List<VectorData> readVectors(BufferedReader br, int dim, int count, int totalDim) throws IOException {
+        List<VectorData> vectors = new ArrayList<>(count);
+        int vectorsRead = 0;
+        List<Double> currentVectorBuffer = new ArrayList<>(totalDim); // 当前向量缓冲区
+        
         String line;
-        while ((line = br.readLine()) != null) {
-            for (String part : line.trim().split("\\s+")) {
+        while (vectorsRead < count && (line = br.readLine()) != null) {
+            String[] parts = line.trim().split("\\s+");
+            
+            // 将当前行的所有数值添加到缓冲区
+            for (String part : parts) {
                 if (!part.isEmpty()) {
-                    values.add(Double.parseDouble(part));
+                    currentVectorBuffer.add(Double.parseDouble(part));
+                }
+            }
+            
+            // 检查缓冲区是否收集了足够一个完整向量的数据
+            while (currentVectorBuffer.size() >= totalDim && vectorsRead < count) {
+                // 提取前dim个维度构建向量
+                double[] vector = new double[dim];
+                for (int i = 0; i < dim; i++) {
+                    vector[i] = currentVectorBuffer.get(i);
+                }
+                
+                vectors.add(new VectorData(vector));
+                vectorsRead++;
+                
+                // 移除已处理的向量数据，保留可能的多余数据用于下一个向量
+                if (currentVectorBuffer.size() == totalDim) {
+                    currentVectorBuffer.clear();
+                } else {
+                    // 如果缓冲区有超过一个向量的数据，移除已处理的部分
+                    for (int i = 0; i < totalDim; i++) {
+                        currentVectorBuffer.remove(0);
+                    }
                 }
             }
         }
-        return values;
-    }
-
-    // 构建向量对象（VectorData）
-    private List<VectorData> buildVectors(List<Double> values, int dim, int count, int totalDim) {
-        List<VectorData> vectors = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) {
-            double[] v = new double[dim];
-            int start = i * totalDim;
-            for (int j = 0; j < dim; j++) {
-                v[j] = values.get(start + j);
-            }
-            vectors.add(new VectorData(v));
+        
+        // 检查是否成功读取了足够数量的向量
+        if (vectorsRead < count) {
+            throw new IOException("文件中的向量数量不足，期望: " + count + ", 实际: " + vectorsRead);
         }
+        
         return vectors;
     }
 }
