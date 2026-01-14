@@ -45,7 +45,7 @@ public class PivotTable {
 
         // 选择支撑点
         this.pivots = selector.selectPivots(dataCopy, numPivots, distance);
-        System.out.println("叶子节点支撑点: " + pivots);
+        // System.out.println("叶子节点支撑点: " + pivots);
 
         // 将支撑点从数据中移除
         for (MetricData pivot : pivots) {

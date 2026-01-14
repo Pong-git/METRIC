@@ -48,6 +48,14 @@ public class VectorData extends MetricData {
         return vector;
     }
 
+    /**
+     * 重写 getValues 方法，使其返回向量数据。
+     */
+    @Override
+    public double[] getValues() {
+        return vector;
+    }
+
     @Override
     public String toString() {
         return Arrays.toString(vector);

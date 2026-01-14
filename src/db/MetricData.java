@@ -18,4 +18,14 @@ public abstract class MetricData {
      * @return 原始数据（Object 类型）
      */
     public abstract Object getRawData();
+
+    /**
+     * 获取向量形式的数据（主要用于向量索引和计算距离）。
+     * 
+     * @return double[] 向量
+     * @throws UnsupportedOperationException 如果该 MetricData 不支持向量形式
+     */
+    public double[] getValues() {
+        throw new UnsupportedOperationException("This MetricData does not support getValues()");
+    }
 }
